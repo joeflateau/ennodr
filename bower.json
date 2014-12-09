@@ -1,0 +1,19 @@
+{
+  "name": "test1",
+  "version": "0.0.0",
+  "moduleType": [
+    "amd"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "knockout": "~3.2.0",
+    "foundation": "~5.4.7"
+  }
+}
