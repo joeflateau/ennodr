@@ -7,7 +7,6 @@ block content
   select(data-bind="options: tracks, optionsText: 'label', value: activeTrack, allowUnset: true")
   canvas#myCanvas
 block scripts
-  script(src="/socket.io/socket.io.js")
   script.
     function ViewModel(){
         this.tracks = ko.observableArray();
@@ -17,7 +16,6 @@ block scripts
     
     ko.applyBindings(vm);
 
-    var socket = io.connect('/');
     var canvas = document.getElementById("myCanvas");
     
     var getUserMedia =  function() {
@@ -46,21 +44,23 @@ block scripts
                 video.autoplay = true;
                 video.src = window.URL.createObjectURL(stream);
                 video.addEventListener('play', function(){
+                    canvas.width = video.width = video.videoWidth;
+                    canvas.height = video.height = video.videoHeight;
                     draw(video, canvas.getContext('2d'), video.videoWidth, video.videoHeight);
                     });
             }, function(err){ console.error(err); });
     });
 
+    var worker = new Worker("javascripts/worker.js");
 
     function draw (video, context, w, h){
         if(video.paused || video.ended) return false;
-        canvas.width = video.width = video.videoWidth;
-        canvas.height = video.height = video.videoHeight;
         context.drawImage(video, 0, 0, w, h);
-        var url = canvas.toDataURL('image/jpeg', 0.3);
+        var url = canvas.toDataURL('image/jpeg', 0.8);
         var b64 = url.split(";base64,")[1];
-        socket.emit('frame', b64);
-        requestAnimationFrame(function(){
+        worker.postMessage(b64);
+        
+        setTimeout(function(){
             draw(video, context, w, h);
-            });
+            }, 1000/60);
     }

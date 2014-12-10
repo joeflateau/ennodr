@@ -69,7 +69,7 @@ app.use(function(err, req, res, next) {
 });
 
 io.on('connection', function(socket){
-    var encChild = spawn('avconv', "-y -f image2pipe -s 1280x720 -c:v mjpeg -pix_fmt rgb24 -i - -an -c:v libx264 -pix_fmt yuv420p -f mpegts test.ts".split(" "));
+    var encChild = spawn('avconv', "-y -f image2pipe -s 1280x720 -c:v mjpeg -pix_fmt rgb24 -i - -an -c:v libx264 -pix_fmt yuv420p -f mpegts out/test.ts".split(" "));
 
     encChild.on('close', function(code){
         console.log('avconv closed: ' + code);
