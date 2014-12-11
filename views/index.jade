@@ -3,28 +3,36 @@ extends layout
 block content
   style.
     #console { word-wrap:break-word;}
-  h1= title
-  select(data-bind="options: tracks, optionsText: 'label', value: activeTrack, allowUnset: true")
-  canvas#myCanvas
+  div.row
+    div.medium-4.columns
+      h1= title
+      select(data-bind="options: videoTracks, optionsText: function(source){ return 'camera facing ' + source.facing; }, value: activeTrack, valueAllowUnset: true")
+    div.medium-8.columns
+      canvas#myCanvas
 block scripts
   script.
     function ViewModel(){
-        this.tracks = ko.observableArray();
-        this.activeTrack = ko.observable();
+        var vm = this;
+        vm.tracks = ko.observableArray([]);
+        vm.videoTracks = ko.computed(function(){
+            return vm.tracks().filter(function(source){ return source.kind === "video"});
+            });
+        vm.activeTrack = ko.observable(null);
     }
     var vm = new ViewModel();
+
+    var canvas = document.getElementById("myCanvas");
+    
+    MediaStreamTrack.getSources(function(sources){
+        vm.tracks(sources);
+        });
     
     ko.applyBindings(vm);
 
-    var canvas = document.getElementById("myCanvas");
     
     var getUserMedia =  function() {
      (navigator.webkitGetUserMedia || navigator.mozGetUserMedia).apply(navigator, arguments);
     };
-
-    getUserMedia({ video:true }, function(stream){
-        vm.tracks(stream.getVideoTracks());
-    }, function(err) { console.error(err); });
 
     var source,
         video;
@@ -40,12 +48,15 @@ block scripts
         }
 
         getUserMedia({ video: { optional : [ {sourceId: track.id } ] } }, function(stream){
+                source = stream;
                 video = document.createElement('video');
                 video.autoplay = true;
                 video.src = window.URL.createObjectURL(stream);
-                video.addEventListener('play', function(){
+                video.addEventListener('loadedmetadata', function(){
                     canvas.width = video.width = video.videoWidth;
                     canvas.height = video.height = video.videoHeight;
+                    });
+                video.addEventListener('play', function(){
                     draw(video, canvas.getContext('2d'), video.videoWidth, video.videoHeight);
                     });
             }, function(err){ console.error(err); });
@@ -56,7 +67,7 @@ block scripts
     function draw (video, context, w, h){
         if(video.paused || video.ended) return false;
         context.drawImage(video, 0, 0, w, h);
-        var url = canvas.toDataURL('image/jpeg', 0.8);
+        var url = canvas.toDataURL('image/webp', 0.8);
         var b64 = url.split(";base64,")[1];
         worker.postMessage(b64);
         
